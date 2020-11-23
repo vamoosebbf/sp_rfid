@@ -117,10 +117,12 @@ class MFRC522:
     def MFRC522_Reset(self):
         for i in range(0x30):
             val = self.Read_MFRC522(i)
-            print("val: [0x{} -> 0x{}]\r\n".format(i, val))
+            print("val: [0x{} -> 0x{}]\r\n".format(hex(i), hex(val)))
+
         self.Write_MFRC522(self.CommandReg, self.PCD_RESETPHASE)
+
         val = 0xFF
-        t = 0x10
+        t = 0xff
         while (val) and (t & 0x10):
             val = val - 1
             t = self.Read_MFRC522(self.CommandReg)
@@ -235,6 +237,7 @@ class MFRC522:
                 if command == self.PCD_TRANSCEIVE:
                     n = self.Read_MFRC522(self.FIFOLevelReg)
                     lastBits = self.Read_MFRC522(self.ControlReg) & 0x07
+                    print("n: {}, {}".format(n, lastBits))
                     if lastBits != 0:
                         backLen = (n-1)*8 + lastBits
                     else:
@@ -250,8 +253,12 @@ class MFRC522:
                         backData.append(self.Read_MFRC522(self.FIFODataReg))
                         i = i + 1
             else:
+                print("erro: {}".format(hex(self.Read_MFRC522(self.ErrorReg))))
                 status = self.MI_ERR
-
+        print("backlen: {}".format(backLen))
+        self.SetBitMask(self.ControlReg, 0x80)
+        # stop timer now
+        self.Write_MFRC522(self.CommandReg, self.PCD_IDLE)
         return (status, backData, backLen)
 
     def MFRC522_Request(self, reqMode):
@@ -269,7 +276,7 @@ class MFRC522:
         TagType.append(reqMode)
         (status, backData, backBits) = self.MFRC522_ToCard(
             self.PCD_TRANSCEIVE, TagType)
-
+        print("backBits: {}".format(backBits))
         if ((status != self.MI_OK) | (backBits != 0x10)):
             status = self.MI_ERR
 
@@ -475,8 +482,6 @@ spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
 # Create an object of the class MFRC522
 MIFAREReader = MFRC522(spi1, cs)
 
-MIFAREReader.MFRC522_Init()
-
 # Welcome message
 print("Welcome to the MFRC522 data read example")
 print("Press Ctrl-C to stop.")
@@ -485,7 +490,7 @@ print("Press Ctrl-C to stop.")
 while continue_reading:
 
     # Scan for cards
-    (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
+    (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQALL)
 
     # If a card is found
     if status == MIFAREReader.MI_OK:
