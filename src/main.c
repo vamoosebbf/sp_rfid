@@ -5,16 +5,15 @@
 #include "printf.h"
 #include "sysctl.h"
 
-#define RFID_CS_PIN                  (20)
-#define RFID_CK_PIN                  (21)
-#define RFID_MO_PIN                  (8)
-#define RFID_MI_PIN                  (15)
+#define RFID_CS_PIN (20)
+#define RFID_CK_PIN (21)
+#define RFID_MO_PIN (8)
+#define RFID_MI_PIN (15)
 
-#define RFID_CS_HSNUM                 (20)
-#define RFID_CK_HSNUM                 (21)
-#define RFID_MO_HSNUM                 (8)
-#define RFID_MI_HSNUM                 (15)
-
+#define RFID_CS_HSNUM (20)
+#define RFID_CK_HSNUM (21)
+#define RFID_MO_HSNUM (8)
+#define RFID_MI_HSNUM (15)
 
 int main(int argc, char const *argv[])
 {
@@ -24,67 +23,70 @@ int main(int argc, char const *argv[])
     uint8_t uid[4];
     uint32_t w_val = 110;
     uint32_t r_val;
-    uint8_t key[] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+    uint8_t key[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
     uint32_t freq = 0;
     freq = sysctl_pll_set_freq(SYSCTL_PLL0, 800000000);
     uint64_t core = current_coreid();
     printf("pll freq: %dhz\r\n", freq);
 
-    fpioa_set_function(RFID_CS_PIN , FUNC_GPIOHS0 + RFID_CS_HSNUM);
-    fpioa_set_function(RFID_CK_PIN , FUNC_GPIOHS0 + RFID_CK_HSNUM); 
-    fpioa_set_function(RFID_MO_PIN , FUNC_GPIOHS0 + RFID_MO_HSNUM); 
-    fpioa_set_function(RFID_MI_PIN , FUNC_GPIOHS0 + RFID_MI_HSNUM); 
-    const struct rfid_io_cfg_t io_cfg = \
-    { .hs_cs = RFID_CS_HSNUM,  
-    .hs_clk = RFID_CK_HSNUM,  
-    .hs_mosi = RFID_MO_HSNUM,  
-    .hs_miso = RFID_MI_HSNUM,
-    .hs_rst = 0xFF,  
-    .clk_delay_us = 3 }; 
+    fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM);
+    fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM);
+    fpioa_set_function(RFID_MO_PIN, FUNC_GPIOHS0 + RFID_MO_HSNUM);
+    fpioa_set_function(RFID_MI_PIN, FUNC_GPIOHS0 + RFID_MI_HSNUM);
+    const struct rfid_io_cfg_t io_cfg =
+        {.hs_cs = RFID_CS_HSNUM,
+         .hs_clk = RFID_CK_HSNUM,
+         .hs_mosi = RFID_MO_HSNUM,
+         .hs_miso = RFID_MI_HSNUM,
+         .hs_rst = 0xFF,
+         .clk_delay_us = 3};
 
-    Pcd_io_init(&io_cfg); 
-    PcdReset(); 
+    Pcd_io_init(&io_cfg);
+    PcdReset();
     PcdAntennaOn();
     M500PcdConfigISOType('A');
 
-    for(int i = 0; i < 16; i++){
+    for (int i = 0; i < 16; i++)
+    {
         w_buf[i] = i;
     }
 
     while (1)
     {
         // find card
-        if(PcdRequest(0x52, type) == MI_OK)
-        printf("find card success: %x\r\n",type[0]<<8|type[1] );
+        if (PcdRequest(0x52, type) == MI_OK)
+            printf("find card success: %x\r\n", type[0] << 8 | type[1]);
         msleep(100);
 
         // get uid
-        if(PcdAnticoll(uid) != MI_OK) continue;
+        if (PcdAnticoll(uid) != MI_OK)
+            continue;
         printf("uid: %x,%x,%x,%x\r\n", uid[0], uid[1], uid[2], uid[3]);
         msleep(100);
-        
+
         // select card
-        if(PcdSelect(uid) == MI_OK)
-        printf("pcd select success\r\n");
+        if (PcdSelect(uid) == MI_OK)
+            printf("pcd select success\r\n");
         msleep(100);
 
         // auth key
-        if(PcdAuthState(0x60, 0x11  , key, uid) != MI_OK)  continue;
+        if (PcdAuthState(0x60, 0x11, key, uid) != MI_OK)
+            continue;
         printf("auth success\r\n");
 
         // write
-        if(PcdWrite(0x11, w_buf) == MI_OK)
+        if (PcdWrite(0x11, w_buf) == MI_OK)
             printf("write success\r\n");
         msleep(100);
 
         // read
-        if(PcdRead(0x11, &r_buf) == MI_OK){
-            printf("read success: %d\r\n",r_buf[1]);
+        if (PcdRead(0x11, &r_buf) == MI_OK)
+        {
+            printf("read success: %d\r\n", r_buf[1]);
             break;
         }
         sleep(2);
-
-    }   
+    }
     return 0;
 }

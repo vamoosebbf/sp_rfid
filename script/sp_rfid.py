@@ -2,8 +2,9 @@
 # -*- coding: utf8 -*-
 
 #import RPi.GPIO as GPIO
-import spi
-import signal
+from Maix import GPIO
+from fpioa_manager import fm
+from machine import SPI
 import time
 
 
@@ -108,19 +109,49 @@ class MFRC522:
 
     serNum = []
 
-    def __init__(self, spi, spd=1000000):
-
+    def __init__(self, spi, cs):
+        self.spi = spi
+        self.cs = cs
         self.MFRC522_Init()
 
     def MFRC522_Reset(self):
+        for i in range(0x30):
+            val = self.Read_MFRC522(i)
+            print("val: [0x{} -> 0x{}]\r\n".format(i, val))
         self.Write_MFRC522(self.CommandReg, self.PCD_RESETPHASE)
+        val = 0xFF
+        t = 0x10
+        while (val) and (t & 0x10):
+            val = val - 1
+            t = self.Read_MFRC522(self.CommandReg)
+            time.sleep_ms(1)
+
+        time.sleep_ms(1)
+
+        # 定义发送和接收常用模式 和Mifare卡通讯，CRC初始值0x6363
+        self.Write_MFRC522(self.ModeReg, 0x3D)
+
+        self.Write_MFRC522(self.TReloadRegL, 30)  # 16位定时器低位
+        self.Write_MFRC522(self.TReloadRegH, 0)  # 16位定时器高位
+
+        self.Write_MFRC522(self.TModeReg, 0x8D)  # 定义内部定时器的设置
+
+        self.Write_MFRC522(self.TPrescalerReg, 0x3E)  # 设置定时器分频系数
+
+        self.Write_MFRC522(self.TxAutoReg, 0x40)  # 调制发送信号为100%ASK
 
     def Write_MFRC522(self, addr, val):
-        spi.transfer(((addr << 1) & 0x7E, val))
+        self.cs.value(0)
+        self.spi.write(((addr << 1) & 0x7E))
+        self.spi.write(val)
+        self.cs.value(1)
 
     def Read_MFRC522(self, addr):
-        val = spi.transfer((((addr << 1) & 0x7E) | 0x80, 0))
-        return val[1]
+        self.cs.value(0)
+        self.spi.write((((addr << 1) & 0x7E) | 0x80))
+        val = self.spi.read(1)
+        self.cs.value(1)
+        return val[0]
 
     def SetBitMask(self, reg, mask):
         tmp = self.Read_MFRC522(reg)
@@ -132,12 +163,13 @@ class MFRC522:
 
     def AntennaOn(self):
         temp = self.Read_MFRC522(self.TxControlReg)
-        if(~(temp & 0x03)):
+        if not (temp & 0x03):
             self.SetBitMask(self.TxControlReg, 0x03)
 
     def AntennaOff(self):
         self.ClearBitMask(self.TxControlReg, 0x03)
 
+    # 通过RC522与卡片通信
     def MFRC522_ToCard(self, command, sendData):
         backData = []
         backLen = 0
@@ -148,39 +180,53 @@ class MFRC522:
         n = 0
         i = 0
 
-        if command == self.PCD_AUTHENT:
-            irqEn = 0x12
-            waitIRq = 0x10
-        if command == self.PCD_TRANSCEIVE:
-            irqEn = 0x77
-            waitIRq = 0x30
+        if command == self.PCD_AUTHENT:     # Mifare认证
+            irqEn = 0x12                    # 允许错误中断请求ErrIEn  允许空闲中断IdleIEn
+            waitIRq = 0x10                  # 认证寻卡等待时候 查询空闲中断标志位
+        if command == self.PCD_TRANSCEIVE:  # 接收发送 发送接收
+            irqEn = 0x77                    # 允许TxIEn RxIEn IdleIEn LoAlertIEn ErrIEn TimerIEn
+            waitIRq = 0x30                  # 寻卡等待时候 查询接收中断标志位与 空闲中断标志位
 
+        # IRqInv置位管脚IRQ与Status1Reg的IRq位的值相反
         self.Write_MFRC522(self.CommIEnReg, irqEn | 0x80)
+        # Set1该位清零时，CommIRqReg的屏蔽位清零
         self.ClearBitMask(self.CommIrqReg, 0x80)
-        self.SetBitMask(self.FIFOLevelReg, 0x80)
-
+        # 写空闲命令
         self.Write_MFRC522(self.CommandReg, self.PCD_IDLE)
 
+        # 置位FlushBuffer清除内部FIFO的读和写指针以及ErrReg的BufferOvfl标志位被清除
+        self.SetBitMask(self.FIFOLevelReg, 0x80)
+
         while(i < len(sendData)):
-            self.Write_MFRC522(self.FIFODataReg, sendData[i])
+            self.Write_MFRC522(self.FIFODataReg, sendData[i])  # 写数据进FIFOdata
             i = i+1
 
-        self.Write_MFRC522(self.CommandReg, command)
+        self.Write_MFRC522(self.CommandReg, command)  # 写命令
 
         if command == self.PCD_TRANSCEIVE:
+            # StartSend置位启动数据发送 该位与收发命令使用时才有效
             self.SetBitMask(self.BitFramingReg, 0x80)
 
-        i = 2000
+        i = 1000 * 3
+        # while True:
+        #     n = self.Read_MFRC522(self.CommIrqReg)  # 查询事件中断
+        #     i = i - 1
+        #     if ~((i != 0) and ~(n & 0x01) and ~(n & waitIRq)):
+        #         break
+
+        # 认证 与寻卡等待时间
         while True:
-            n = self.Read_MFRC522(self.CommIrqReg)
+            n = self.Read_MFRC522(self.CommIrqReg)  # 查询事件中断
             i = i - 1
-            if ~((i != 0) and ~(n & 0x01) and ~(n & waitIRq)):
+            if not ((i != 0) and (not (n & 0x01)) and (not (n & waitIRq))):
                 break
 
-        self.ClearBitMask(self.BitFramingReg, 0x80)
+        self.ClearBitMask(self.BitFramingReg, 0x80)  # 清理允许StartSend位
 
+        print(i)
         if i != 0:
-            if (self.Read_MFRC522(self.ErrorReg) & 0x1B) == 0x00:
+            # 读错误标志寄存器BufferOfI CollErr ParityErr ProtocolErr
+            if not (self.Read_MFRC522(self.ErrorReg) & 0x1B):
                 status = self.MI_OK
 
                 if n & irqEn & 0x01:
@@ -213,7 +259,12 @@ class MFRC522:
         backBits = None
         TagType = []
 
+        # 清理指示MIFARECyptol单元接通以及所有卡的数据通信被加密的情况
+        self.ClearBitMask(self.Status2Reg, 0x08)
+        # 发送的最后一个字节的 七位
         self.Write_MFRC522(self.BitFramingReg, 0x07)
+        # TX1,TX2管脚的输出信号传递经发送调制的13.56的能量载波信号
+        self.SetBitMask(self.TxControlReg, 0x03)
 
         TagType.append(reqMode)
         (status, backData, backBits) = self.MFRC522_ToCard(
@@ -285,7 +336,7 @@ class MFRC522:
         (status, backData, backLen) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, buf)
 
         if (status == self.MI_OK) and (backLen == 0x18):
-            print "Size: " + str(backData[0])
+            print("Size: ", str(backData[0]))
             return backData[0]
         else:
             return 0
@@ -316,9 +367,9 @@ class MFRC522:
 
         # Check if an error occurred
         if not(status == self.MI_OK):
-            print "AUTH ERROR!!"
+            print("AUTH ERROR!!")
         if not (self.Read_MFRC522(self.Status2Reg) & 0x08) != 0:
-            print "AUTH ERROR(status2reg & 0x08) != 0"
+            print("AUTH ERROR(status2reg & 0x08) != 0")
 
         # Return the status
         return status
@@ -336,10 +387,10 @@ class MFRC522:
         (status, backData, backLen) = self.MFRC522_ToCard(
             self.PCD_TRANSCEIVE, recvData)
         if not(status == self.MI_OK):
-            print "Error while reading!"
+            print("Error while reading!")
         i = 0
         if len(backData) == 16:
-            print "Sector "+str(blockAddr)+" "+str(backData)
+            print("Sector "+str(blockAddr)+" "+str(backData))
             return backData
 
     def MFRC522_Write(self, blockAddr, writeData):
@@ -354,7 +405,7 @@ class MFRC522:
         if not(status == self.MI_OK) or not(backLen == 4) or not((backData[0] & 0x0F) == 0x0A):
             status = self.MI_ERR
 
-        print str(backLen)+" backdata &0x0F == 0x0A "+str(backData[0] & 0x0F)
+        print(str(backLen)+" backdata &0x0F == 0x0A "+str(backData[0] & 0x0F))
         if status == self.MI_OK:
             i = 0
             buf = []
@@ -367,9 +418,9 @@ class MFRC522:
             (status, backData, backLen) = self.MFRC522_ToCard(
                 self.PCD_TRANSCEIVE, buf)
             if not(status == self.MI_OK) or not(backLen == 4) or not((backData[0] & 0x0F) == 0x0A):
-                print "Error while writing"
+                print("Error while writing")
             if status == self.MI_OK:
-                print "Data written"
+                print("Data written")
 
     def MFRC522_DumpClassic1K(self, key, uid):
         i = 0
@@ -379,70 +430,89 @@ class MFRC522:
             if status == self.MI_OK:
                 self.MFRC522_Read(i)
             else:
-                print "Authentication error"
+                print("Authentication error")
             i = i+1
 
     def MFRC522_Init(self):
-        #    GPIO.output(self.NRSTPD, 1)
-
         self.MFRC522_Reset()
 
-        self.Write_MFRC522(self.TModeReg, 0x8D)
-        self.Write_MFRC522(self.TPrescalerReg, 0x3E)
-        self.Write_MFRC522(self.TReloadRegL, 30)
-        self.Write_MFRC522(self.TReloadRegH, 0)
+        # self.Write_MFRC522(self.TModeReg, 0x8D)
+        # self.Write_MFRC522(self.TPrescalerReg, 0x3E)
+        # self.Write_MFRC522(self.TReloadRegL, 30)
+        # self.Write_MFRC522(self.TReloadRegH, 0)
 
-        self.Write_MFRC522(self.TxAutoReg, 0x40)
-        self.Write_MFRC522(self.ModeReg, 0x3D)
-        self.AntennaOn()
+        # self.Write_MFRC522(self.TxAutoReg, 0x40)
+        # self.Write_MFRC522(self.ModeReg, 0x3D)
+        self.M500PcdConfigISOType('A')
+        time.sleep_ms(2)
+        self.AntennaOn()  # 开天线
 
+    def M500PcdConfigISOType(self, ucType):
+        if ucType == 'A':  # ISO14443_A
+            self.ClearBitMask(self.Status2Reg, 0x08)
+            self.Write_MFRC522(self.ModeReg, 0x3D)  # 3F
+            self.Write_MFRC522(self.RxSelReg, 0x86)  # 84
+            self.Write_MFRC522(self.RFCfgReg, 0x7F)  # 4F
+            self.Write_MFRC522(self.TReloadRegL, 30)
+            self.Write_MFRC522(self.TReloadRegH, 0)
+            self.Write_MFRC522(self.TModeReg, 0x8D)
+            self.Write_MFRC522(self.TPrescalerReg, 0x3E)
+        else:
+            print("unk ISO type\r\n")
 
-from Maix import GPIO, 
-from machine import SPI
 
 continue_reading = True
 
-spi = SPI()
+# 20: CS_NUM;
+fm.register(20, fm.fpioa.GPIOHS20, force=True)
+
+# set gpiohs work mode to output mode
+cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
+
+spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
+           polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
 
 # Create an object of the class MFRC522
-MIFAREReader = MFRC522.MFRC522()
+MIFAREReader = MFRC522(spi1, cs)
+
+MIFAREReader.MFRC522_Init()
 
 # Welcome message
-print "Welcome to the MFRC522 data read example"
-print "Press Ctrl-C to stop."
+print("Welcome to the MFRC522 data read example")
+print("Press Ctrl-C to stop.")
 
 # This loop keeps checking for chips. If one is near it will get the UID and authenticate
 while continue_reading:
-    
-    # Scan for cards    
-    (status,TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
+
+    # Scan for cards
+    (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
 
     # If a card is found
     if status == MIFAREReader.MI_OK:
-        print "Card detected"
-    
-    # Get the UID of the card
-    (status,uid) = MIFAREReader.MFRC522_Anticoll()
+        print("Card detected")
+        # Get the UID of the card
+        (status, uid) = MIFAREReader.MFRC522_Anticoll()
 
-    # If we have the UID, continue
-    if status == MIFAREReader.MI_OK:
-
-        # Print UID
-        print "Card read UID: "+str(uid[0])+","+str(uid[1])+","+str(uid[2])+","+str(uid[3])
-    
-        # This is the default key for authentication
-        key = [0xFF,0xFF,0xFF,0xFF,0xFF,0xFF]
-        
-        # Select the scanned tag
-        MIFAREReader.MFRC522_SelectTag(uid)
-
-        # Authenticate
-        status = MIFAREReader.MFRC522_Auth(MIFAREReader.PICC_AUTHENT1A, 8, key, uid)
-
-        # Check if authenticated
+        # If we have the UID, continue
         if status == MIFAREReader.MI_OK:
-            MIFAREReader.MFRC522_Read(8)
-            MIFAREReader.MFRC522_StopCrypto1()
-        else:
-            print "Authentication error"
 
+            # Print UID
+            print("Card read UID: " +
+                  str(uid[0])+","+str(uid[1])+","+str(uid[2])+","+str(uid[3]))
+
+            # This is the default key for authentication
+            key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+
+            # Select the scanned tag
+            MIFAREReader.MFRC522_SelectTag(uid)
+
+            # Authenticate
+            status = MIFAREReader.MFRC522_Auth(
+                MIFAREReader.PICC_AUTHENT1A, 8, key, uid)
+
+            # Check if authenticated
+            if status == MIFAREReader.MI_OK:
+                MIFAREReader.MFRC522_Read(8)
+                MIFAREReader.MFRC522_StopCrypto1()
+            else:
+                print("Authentication error")

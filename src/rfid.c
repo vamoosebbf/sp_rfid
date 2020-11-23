@@ -27,25 +27,29 @@ static uint8_t spi_rw(uint8_t data)
 {
     uint8_t temp = 0;
 
-    
-
-    for(uint8_t i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 8; i++)
+    {
         GPIOHS_OUT_LOWX(spi_io_cfg.hs_clk);
         usleep(spi_io_cfg.clk_delay_us);
 
-        if(data & 0x80) {
+        if (data & 0x80)
+        {
             GPIOHS_OUT_HIGH(spi_io_cfg.hs_mosi);
-        } else {
+        }
+        else
+        {
             GPIOHS_OUT_LOWX(spi_io_cfg.hs_mosi);
         }
         data <<= 1;
         temp <<= 1;
-        if(GET_GPIOHS_VALX(spi_io_cfg.hs_miso)) { temp++; }
+        if (GET_GPIOHS_VALX(spi_io_cfg.hs_miso))
+        {
+            temp++;
+        }
 
         GPIOHS_OUT_HIGH(spi_io_cfg.hs_clk);
         usleep(spi_io_cfg.clk_delay_us);
     }
-
 
     return temp;
 }
@@ -60,7 +64,7 @@ static uint8_t spi_rw(uint8_t data)
 static uint8_t ReadRawRC(uint8_t ucAddress)
 {
     uint8_t ret, ucAddr = ((ucAddress << 1) & 0x7E) | 0x80;
-    
+
     GPIOHS_OUT_LOWX(spi_io_cfg.hs_cs);
     usleep(10);
 
@@ -147,7 +151,8 @@ static void CalulateCRC(uint8_t *pIndata, uint8_t ucLen, uint8_t *pOutData)
 
     uc = 0xFF;
 
-    do {
+    do
+    {
         ucN = ReadRawRC(DivIrqReg);
         uc--;
     } while ((uc != 0) && !(ucN & 0x04));
@@ -168,7 +173,7 @@ static void CalulateCRC(uint8_t *pIndata, uint8_t ucLen, uint8_t *pOutData)
   * @return status
   */
 static uint8_t PcdComMF522(uint8_t ucCommand, uint8_t *pInData, uint8_t ucInLenByte,
-                            uint8_t *pOutData, uint32_t *pOutLenBit)
+                           uint8_t *pOutData, uint32_t *pOutLenBit)
 {
     uint8_t ucN, cStatus = MI_ERR;
     uint8_t ucIrqEn = 0x00;
@@ -176,17 +181,18 @@ static uint8_t PcdComMF522(uint8_t ucCommand, uint8_t *pInData, uint8_t ucInLenB
     uint8_t ucLastBits;
     uint32_t ul;
 
-    switch (ucCommand) {
-        case PCD_AUTHENT:     //Mifare认证
-            ucIrqEn = 0x12;   //允许错误中断请求ErrIEn  允许空闲中断IdleIEn
-            ucWaitFor = 0x10; //认证寻卡等待时候 查询空闲中断标志位
-            break;
-        case PCD_TRANSCEIVE:  //接收发送 发送接收
-            ucIrqEn = 0x77;   //允许TxIEn RxIEn IdleIEn LoAlertIEn ErrIEn TimerIEn
-            ucWaitFor = 0x30; //寻卡等待时候 查询接收中断标志位与 空闲中断标志位
-            break;
-        default:
-            break;
+    switch (ucCommand)
+    {
+    case PCD_AUTHENT:     //Mifare认证
+        ucIrqEn = 0x12;   //允许错误中断请求ErrIEn  允许空闲中断IdleIEn
+        ucWaitFor = 0x10; //认证寻卡等待时候 查询空闲中断标志位
+        break;
+    case PCD_TRANSCEIVE:  //接收发送 发送接收
+        ucIrqEn = 0x77;   //允许TxIEn RxIEn IdleIEn LoAlertIEn ErrIEn TimerIEn
+        ucWaitFor = 0x30; //寻卡等待时候 查询接收中断标志位与 空闲中断标志位
+        break;
+    default:
+        break;
     }
 
     //IRqInv置位管脚IRQ与Status1Reg的IRq位的值相反
@@ -204,52 +210,64 @@ static uint8_t PcdComMF522(uint8_t ucCommand, uint8_t *pInData, uint8_t ucInLenB
 
     WriteRawRC(CommandReg, ucCommand); //写命令
 
-    if (ucCommand == PCD_TRANSCEIVE) {
+    if (ucCommand == PCD_TRANSCEIVE)
+    {
         //StartSend置位启动数据发送 该位与收发命令使用时才有效
         SetBitMask(BitFramingReg, 0x80);
     }
 
     ul = 1000 * 3; //根据时钟频率调整，操作M1卡最大等待时间25ms
 
-    do { //认证 与寻卡等待时间
+    do
+    {                               //认证 与寻卡等待时间
         ucN = ReadRawRC(ComIrqReg); //查询事件中断
         ul--;
     } while ((ul != 0) && (!(ucN & 0x01)) && (!(ucN & ucWaitFor)));
 
     ClearBitMask(BitFramingReg, 0x80); //清理允许StartSend位
 
-    if (ul != 0) {
+    if (ul != 0)
+    {
         //读错误标志寄存器BufferOfI CollErr ParityErr ProtocolErr
-        if (!(ReadRawRC(ErrorReg) & 0x1B)) {
+        if (!(ReadRawRC(ErrorReg) & 0x1B))
+        {
             cStatus = MI_OK;
 
-            if (ucN & ucIrqEn & 0x01) {
-                 //是否发生定时器中断
+            if (ucN & ucIrqEn & 0x01)
+            {
+                //是否发生定时器中断
                 cStatus = MI_NOTAGERR;
             }
 
-            if (ucCommand == PCD_TRANSCEIVE) {
+            if (ucCommand == PCD_TRANSCEIVE)
+            {
                 //读FIFO中保存的字节数
                 ucN = ReadRawRC(FIFOLevelReg);
 
                 //最后接收到得字节的有效位数
                 ucLastBits = ReadRawRC(ControlReg) & 0x07;
 
-                if (ucLastBits) {
+                if (ucLastBits)
+                {
                     //N个字节数减去1（最后一个字节）+最后一位的位数 读取到的数据总位数
                     *pOutLenBit = (ucN - 1) * 8 + ucLastBits;
-                } else {
+                }
+                else
+                {
                     *pOutLenBit = ucN * 8; //最后接收到的字节整个字节有效
                 }
 
                 ucN = (ucN == 0) ? 1 : ucN;
                 ucN = (ucN > MAXRLEN) ? MAXRLEN : ucN;
 
-                for (ul = 0; ul < ucN; ul++) {
+                for (ul = 0; ul < ucN; ul++)
+                {
                     pOutData[ul] = ReadRawRC(FIFODataReg);
                 }
             }
-        } else {
+        }
+        else
+        {
             cStatus = MI_ERR;
         }
     }
@@ -268,7 +286,8 @@ void PcdAntennaOn(void)
     uint8_t uc;
 
     uc = ReadRawRC(TxControlReg);
-    if (!(uc & 0x03)) {
+    if (!(uc & 0x03))
+    {
         SetBitMask(TxControlReg, 0x03);
     }
 }
@@ -292,13 +311,15 @@ void PcdReset(void)
 {
     uint8_t val = 0, t;
 
-    if(0xFF != spi_io_cfg.hs_rst) {
+    if (0xFF != spi_io_cfg.hs_rst)
+    {
         gpiohs_set_pin(spi_io_cfg.hs_rst, 0);
         msleep(10);
         gpiohs_set_pin(spi_io_cfg.hs_rst, 1);
-    } 
+    }
 
-    for (uint8_t i = 0; i< 0x30; i++) {
+    for (uint8_t i = 0; i < 0x30; i++)
+    {
         val = ReadRawRC(i);
         printk("val: [0x%02X -> 0x%02X]\r\n", i, val);
     }
@@ -306,11 +327,12 @@ void PcdReset(void)
     WriteRawRC(CommandReg, 0x0f);
 
     val = 0xFF;
-    do {
-        val --;
+    do
+    {
+        val--;
         t = ReadRawRC(CommandReg);
         msleep(1);
-    }while((val) && (t & 0x10));
+    } while ((val) && (t & 0x10));
 
     msleep(1);
 
@@ -350,7 +372,9 @@ void M500PcdConfigISOType(uint8_t ucType)
         msleep(2);
 
         PcdAntennaOn(); //开天线
-    } else {
+    }
+    else
+    {
         printk("unk ISO type\r\n");
     }
 }
@@ -369,10 +393,13 @@ uint8_t PcdRequest(uint8_t ucReq_code, uint8_t *pTagType)
 
     cStatus = PcdComMF522(PCD_TRANSCEIVE, ucComMF522Buf, 1, ucComMF522Buf, &ulLen);
 
-    if ((cStatus == MI_OK) && (ulLen == 0x10)) {
+    if ((cStatus == MI_OK) && (ulLen == 0x10))
+    {
         *pTagType = ucComMF522Buf[0];
         *(pTagType + 1) = ucComMF522Buf[1];
-    } else {
+    }
+    else
+    {
         cStatus = MI_ERR;
     }
 
@@ -393,13 +420,16 @@ uint8_t PcdAnticoll(uint8_t *pSnr)
 
     cStatus = PcdComMF522(PCD_TRANSCEIVE, ucComMF522Buf, 2, ucComMF522Buf, &ulLen);
 
-    if (cStatus == MI_OK) {
-        for (uc = 0; uc < 4; uc++) {
+    if (cStatus == MI_OK)
+    {
+        for (uc = 0; uc < 4; uc++)
+        {
             *(pSnr + uc) = ucComMF522Buf[uc];
             ucSnr_check ^= ucComMF522Buf[uc];
         }
 
-        if (ucSnr_check != ucComMF522Buf[uc]) {
+        if (ucSnr_check != ucComMF522Buf[uc])
+        {
             cStatus = MI_ERR;
         }
     }
@@ -412,13 +442,15 @@ uint8_t PcdAnticoll(uint8_t *pSnr)
 uint8_t PcdSelect(uint8_t *pSnr)
 {
     uint32_t ulLen;
-    uint8_t uc, cStatus, ucComMF522Buf[MAXRLEN];;
+    uint8_t uc, cStatus, ucComMF522Buf[MAXRLEN];
+    ;
 
     ucComMF522Buf[0] = PICC_ANTICOLL1;
     ucComMF522Buf[1] = 0x70;
     ucComMF522Buf[6] = 0;
 
-    for (uc = 0; uc < 4; uc++) {
+    for (uc = 0; uc < 4; uc++)
+    {
         ucComMF522Buf[uc + 2] = *(pSnr + uc);
         ucComMF522Buf[6] ^= *(pSnr + uc);
     }
@@ -429,7 +461,8 @@ uint8_t PcdSelect(uint8_t *pSnr)
 
     cStatus = PcdComMF522(PCD_TRANSCEIVE, ucComMF522Buf, 9, ucComMF522Buf, &ulLen);
 
-    if((cStatus != MI_OK) || (ulLen != 0x18)) {
+    if ((cStatus != MI_OK) || (ulLen != 0x18))
+    {
         cStatus = MI_ERR;
     }
 
@@ -444,17 +477,20 @@ uint8_t PcdAuthState(uint8_t ucAuth_mode, uint8_t ucAddr, const uint8_t *pKey, u
     ucComMF522Buf[0] = ucAuth_mode;
     ucComMF522Buf[1] = ucAddr;
 
-    for (uc = 0; uc < 6; uc++) {
+    for (uc = 0; uc < 6; uc++)
+    {
         ucComMF522Buf[uc + 2] = *(pKey + uc);
     }
 
-    for (uc = 0; uc < 4; uc++) {
+    for (uc = 0; uc < 4; uc++)
+    {
         ucComMF522Buf[uc + 8] = *(pSnr + uc);
     }
 
     cStatus = PcdComMF522(PCD_AUTHENT, ucComMF522Buf, 12, ucComMF522Buf, &ulLen);
 
-    if ((cStatus != MI_OK) || (!(ReadRawRC(Status2Reg) & 0x08))) {
+    if ((cStatus != MI_OK) || (!(ReadRawRC(Status2Reg) & 0x08)))
+    {
         cStatus = MI_ERR;
     }
 
@@ -473,13 +509,15 @@ uint8_t PcdWrite(uint8_t ucAddr, uint8_t *pData)
     if ((cStatus != MI_OK) || (ulLen != 4) ||
         ((ucComMF522Buf[0] & 0x0F) != 0x0A))
     {
-            printf("2 ulLen: %d\r\n",ulLen);
+        printf("2 ulLen: %d\r\n", ulLen);
 
-            cStatus = MI_ERR;
+        cStatus = MI_ERR;
     }
 
-    if (cStatus == MI_OK) {
-        for (uc = 0; uc < 16; uc++) {
+    if (cStatus == MI_OK)
+    {
+        for (uc = 0; uc < 16; uc++)
+        {
             ucComMF522Buf[uc] = *(pData + uc);
         }
 
@@ -490,7 +528,7 @@ uint8_t PcdWrite(uint8_t ucAddr, uint8_t *pData)
         if ((cStatus != MI_OK) || (ulLen != 4) ||
             ((ucComMF522Buf[0] & 0x0F) != 0x0A))
         {
-            printf("1 ulLen: %d\r\n",ulLen);
+            printf("1 ulLen: %d\r\n", ulLen);
             cStatus = MI_ERR;
         }
     }
@@ -506,11 +544,15 @@ uint8_t PcdRead(uint8_t ucAddr, uint8_t *pData)
 
     cStatus = PcdComMF522(PCD_TRANSCEIVE, ucComMF522Buf, 4, ucComMF522Buf, &ulLen);
 
-    if ((cStatus == MI_OK) && (ulLen == 0x90)) {
-        for (uc = 0; uc < 16; uc++) {
+    if ((cStatus == MI_OK) && (ulLen == 0x90))
+    {
+        for (uc = 0; uc < 16; uc++)
+        {
             *(pData + uc) = ucComMF522Buf[uc];
         }
-    } else {
+    }
+    else
+    {
         cStatus = MI_ERR;
     }
 
@@ -536,7 +578,8 @@ void Pcd_io_init(const struct rfid_io_cfg_t *cfg)
     gpiohs_set_pin(spi_io_cfg.hs_clk, 1);
     gpiohs_set_pin(spi_io_cfg.hs_mosi, 1);
 
-    if(0xFF != spi_io_cfg.hs_rst) {
+    if (0xFF != spi_io_cfg.hs_rst)
+    {
         gpiohs_set_drive_mode(spi_io_cfg.hs_rst, GPIO_DM_OUTPUT);
         gpiohs_set_pin(spi_io_cfg.hs_rst, 1);
     }
