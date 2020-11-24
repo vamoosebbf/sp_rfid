@@ -225,7 +225,6 @@ class MFRC522:
 
         self.ClearBitMask(self.BitFramingReg, 0x80)  # 清理允许StartSend位
 
-        print(i)
         if i != 0:
             # 读错误标志寄存器BufferOfI CollErr ParityErr ProtocolErr
             if not (self.Read_MFRC522(self.ErrorReg) & 0x1B):
@@ -253,9 +252,9 @@ class MFRC522:
                         backData.append(self.Read_MFRC522(self.FIFODataReg))
                         i = i + 1
             else:
-                print("erro: {}".format(hex(self.Read_MFRC522(self.ErrorReg))))
+                # print("erro: {}".format(hex(self.Read_MFRC522(self.ErrorReg))))
                 status = self.MI_ERR
-        print("backlen: {}".format(backLen))
+        # print("backlen: {}".format(backLen))
         self.SetBitMask(self.ControlReg, 0x80)
         # stop timer now
         self.Write_MFRC522(self.CommandReg, self.PCD_IDLE)
@@ -393,7 +392,7 @@ class MFRC522:
         recvData.append(pOut[1])
         (status, backData, backLen) = self.MFRC522_ToCard(
             self.PCD_TRANSCEIVE, recvData)
-        if not(status == self.MI_OK):
+        if not (status == self.MI_OK):
             print("Error while reading!")
         i = 0
         if len(backData) == 16:
@@ -428,6 +427,7 @@ class MFRC522:
                 print("Error while writing")
             if status == self.MI_OK:
                 print("Data written")
+            return status
 
     def MFRC522_DumpClassic1K(self, key, uid):
         i = 0
@@ -468,6 +468,7 @@ class MFRC522:
             print("unk ISO type\r\n")
 
 
+#########test#############
 continue_reading = True
 
 # 20: CS_NUM;
@@ -483,8 +484,7 @@ spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
 MIFAREReader = MFRC522(spi1, cs)
 
 # Welcome message
-print("Welcome to the MFRC522 data read example")
-print("Press Ctrl-C to stop.")
+print("Welcome to the MFRC522 data read/write example")
 
 # This loop keeps checking for chips. If one is near it will get the UID and authenticate
 while continue_reading:
@@ -513,11 +513,25 @@ while continue_reading:
 
             # Authenticate
             status = MIFAREReader.MFRC522_Auth(
-                MIFAREReader.PICC_AUTHENT1A, 8, key, uid)
+                MIFAREReader.PICC_AUTHENT1A, 11, key, uid)
 
             # Check if authenticated
             if status == MIFAREReader.MI_OK:
-                MIFAREReader.MFRC522_Read(8)
+                data = []
+                # Fill the data with 0~16
+                for x in range(0, 16):
+                    data.append(x)
+
+                # Write the data
+                print("Sector 11 will now be filled with 1~16:")
+                status = MIFAREReader.MFRC522_Write(11, data)
+
+                if status == MIFAREReader.MI_OK:
+                    print("start to read")
+                    # read the data
+                    MIFAREReader.MFRC522_Read(11)
+
+                # Stop
                 MIFAREReader.MFRC522_StopCrypto1()
             else:
                 print("Authentication error")
