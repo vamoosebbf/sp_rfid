@@ -13,10 +13,8 @@
 | script | MaixPy脚本示例 |
 |  src   | C裸机程序示例  |
 ## 介绍
-<img src="img/sp_rfid.png" 
-    alt="sp_rfid"
-    title="sp_rfid"
-    style="padding-right:100px;" align="right" width="" height="400" />
+<img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="400" />
+
 
   * 利用 SP-MOD SPI 和 RFID 模块通讯
   * 主控芯片：FM17510 是一款高度集成的工作在 13.56MHz 下的非接触读写器芯片。

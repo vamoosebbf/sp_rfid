@@ -14,10 +14,7 @@
 |    src    | C program example based on the standalone sdk |
 
 ## Introduce
-<img src="img/sp_rfid.png" 
-    alt="sp_rfid"
-    title="sp_rfid"
-    style="padding-right:100px;" align="right" width="" height="400" />
+<img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="400" />
 
   * Use SP-MOD SPI to communicate with RFID Module
   * Control chip：The FM17510 is a highly integrated, contactless reader chip that works at 13.56MHz.
