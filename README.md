@@ -6,30 +6,38 @@
 [中文](README_CN.md)
 
 ## Introduce
+<img src="img/sp_rfid.png" 
+    alt="sp_rfid"
+    title="sp_rfid"
+    style="padding-right:100px;" align="right" width="" height="400" />
 
-SP_RFID has a 1.14 'inch LCD, 4-line SPI interface control, 8P FPC(0.5mm interval) interface TFT LCD, 180° Angle of view, using SP_MOD connection.
+  * Use SP-MOD SPI to communicate with RFID Module
+  * Control chip：The FM17510 is a highly integrated, contactless reader chip that works at 13.56MHz.
+    Supports non-contact reader mode in accordance with ISO/IEC 14443 protocol
+  * ISO14443 TYPEA supports communication rates of 106kbps，212kbps，424kbps
+  * Size :25*20mm
+  * 64Byte FIFO
+  * The connection method :SP-MOD (2*4P 2.54mm space stitch)or MX 6P connector 1.25mm spaced
 
-<img src="img/sp_rfid.png" alt="sp_rfid" height="400" />
-
-*See [Module Specification](doc/SP-LCD1.14规格书V1.0.pdf) for more information.*
+*See [Module Specification](doc/SP-RFID规格书V1.0.pdf) for more information.*
 
 ## Pin figure
 
-<img src="img/sp_lcd1.14_back.png" height="250" />
+<img src="img/back.png" height="300" />
 
 ## Mode of connection
 
-<img src="img/connection.png" height="200">
+<img src="img/connection.png" height="250">
 
-|   MCU:FUN(IO)   | SP_EINK |
+|   MCU:FUN(IO)   | SP_RFID |
 | :-------------: | :-----: |
-|  GPIOHS7(IO_7)  |   RST   |
-| GPIOHS15(IO_15) |   D/C   |
+|    NC(IO_7)     |   NPD   |
+| SPI:MISO(IO_15) |   SO    |
 | SPI:SS0(IO_20)  |   CS    |
 | SPI:SCK(IO_21)  |   SCK   |
 | SPI:MOSI(IO_8)  |   SI    |
-|  GPIOHS6(IO_6)  |   BL    |
-|    2.5-4,8V     |  3.3V   |
+|    NC(IO_6)     |   IRQ   |
+|    2.2~3.6V     |  3.3V   |
 |       GND       |   GND   |
 
 
@@ -42,95 +50,76 @@ Configure IO port corresponding to MCU as SPI function pin.
 
 * C
 
+  This demo uses a software SPI, so set the corresponding pin to GPIOHS instead of SPI function. See the full code for the implementation.
   ```c
-  fpioa_set_function(SPI_IPS_LCD_CS_PIN_NUM, FUNC_SPI1_SS0);   // SPI_IPS_LCD_CS_PIN_NUM: 20;
-  fpioa_set_function(SPI_IPS_LCD_SCK_PIN_NUM, FUNC_SPI1_SCLK); // SPI_IPS_LCD_SCK_PIN_NUM: 21;
-  fpioa_set_function(SPI_IPS_LCD_MOSI_PIN_NUM, FUNC_SPI1_D0);  // SPI_IPS_LCD_MOSI_PIN_NUM: 8;
-  fpioa_set_function(SPI_IPS_LCD_DC_PIN_NUM, FUNC_GPIOHS0 + SPI_IPS_LCD_DC_GPIO_NUM);   // SPI_IPS_LCD_DC_PIN_NUM: 15; SPI_IPS_LCD_DC_GPIO_NUM: 15;
-  fpioa_set_function(SPI_IPS_LCD_RST_PIN_NUM, FUNC_GPIOHS0 + SPI_IPS_LCD_RST_GPIO_NUM); // SPI_IPS_LCD_RST_PIN_NUM: 7; SPI_IPS_LCD_RST_GPIO_NUM: 7;
-  fpioa_set_function(SPI_IPS_LCD_BL_PIN_NUM, FUNC_GPIOHS0 + SPI_IPS_LCD_BL_GPIO_NUM);   // SPI_IPS_LCD_BL_PIN_NUM: 6; SPI_IPS_LCD_BL_GPIO_NUM: 6;
-  
-  // set gpiohs work mode to output mode
-  gpiohs_set_drive_mode(SPI_IPS_LCD_DC_GPIO_NUM, GPIO_DM_OUTPUT);
-  gpiohs_set_drive_mode(SPI_IPS_LCD_RST_GPIO_NUM, GPIO_DM_OUTPUT);
-  gpiohs_set_drive_mode(SPI_IPS_LCD_BL_GPIO_NUM, GPIO_DM_OUTPUT);
+    fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
+    fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM); // RFID_CK_PIN: 21;
+    fpioa_set_function(RFID_MO_PIN, FUNC_GPIOHS0 + RFID_MO_HSNUM); // RFID_MO_PIN: 8;
+    fpioa_set_function(RFID_MI_PIN, FUNC_GPIOHS0 + RFID_MI_HSNUM); // RFID_MI_PIN: 15;
+
+    gpiohs_set_drive_mode(spi_io_cfg.hs_cs, GPIO_DM_OUTPUT);
+    gpiohs_set_drive_mode(spi_io_cfg.hs_clk, GPIO_DM_OUTPUT);
+    gpiohs_set_drive_mode(spi_io_cfg.hs_mosi, GPIO_DM_OUTPUT);
+    gpiohs_set_drive_mode(spi_io_cfg.hs_miso, GPIO_DM_INPUT);
   ```
   
 * MaixPy
 
   ```python
-  # 20: SPI_IPS_LCD_SS_PIN_NUM;
-  fm.register(20, fm.fpioa.GPIOHS20, force=True)
-  # 15: SPI_IPS_LCD_DC_PIN_NUM;
-  fm.register(15, fm.fpioa.GPIOHS15, force=True)
-  # 6: SPI_IPS_LCD_BUSY_PIN_NUM;
-  fm.register(6, fm.fpioa.GPIOHS6, force=True)
-  # 7: SPI_IPS_LCD_RST_PIN_NUM;
-  fm.register(7, fm.fpioa.GPIOHS7, force=True)
-  
-  # set gpiohs work mode to output mode
-  cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
-  dc = GPIO(GPIO.GPIOHS15, GPIO.OUT)
-  busy = GPIO(GPIO.GPIOHS6, GPIO.OUT)
-  rst = GPIO(GPIO.GPIOHS7, GPIO.OUT)
+    # 20: CS_NUM;
+    fm.register(20, fm.fpioa.GPIOHS20, force=True)
+    # set gpiohs work mode to output mode
+    cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
   ```
-  
-  Some of the pins are also configured during SPI initialization
 
 ### SPI initialization
 
 * C
 
-  ```c
-  spi_init(1, SPI_WORK_MODE_0, SPI_FF_STANDARD, DATALENGTH, 0);
-  ```
+  The software SPI only needs to be configured with the corresponding pins, and there is no initialization of SPI.
 
 * MaixPy
 
   ```python
-  spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
-                 polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8)
-  # 21: SPI_IPS_LCD_SCK_PIN_NUM; 8: SPI_IPS_LCD_MOSI_PIN_NUM;
+    # RFID_SCK: 21; RFID_SI:8; RFID_SO: 15;
+    spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
+            polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
   ```
 
-## SP_LCD-1.14 configuration
+## SP_RFID configuration
 
 ### Usage
 
 * Process
 
   1. Initialization
-  2. Create an image an fill it
-  3. Send the image data
+  2. Detected and bind card
+  3. Read or write data
 
 * C
 
   ```c
-  ips_lcd_init(); // init
-  LCD_ShowPicture(0, 0, LCD_W, LCD_H, gImage_nanke); // display
+    // detected card
+    PcdRequest(0x52, type)
+
+    // auth and bind...
+
+    // read or write 16 bytes data from sector 0x11
+    PcdWrite(0x11, w_buf)
+    PcdRead(0x11, &r_buf)
   ```
   
 * MaixPy
 
-  It is mainly used to configure the SPI it needs. The width and height of the screen (240/135 is the maximum value), IPS_MODE is used to set the direction of the screen, 0/1 is horizontal, and 2/3 is vertical.
-
   ```python
-  # init
-  ips = SpiIps(spi1, cs, dc, rst, busy, IPS_WIDTH, IPS_HEIGHT, IPS_MODE)
-  ips.init()
-  
-  # create an 'image' and fill it
-  img = image.Image()
-  img.draw_line(0, 0, 100, 100)
-  img.draw_circle(50, 50, 20)
-  img.draw_rectangle(80, 80, 30, 30)
-  img.draw_circle(70, 70, 8)
-  img.draw_circle(70, 160, 15)
-  img.draw_circle(170, 70, 8)
-  img.draw_circle(110, 40, 15)
-  
-  # display
-  ips.display(img)
+  # Create an object of the class MFRC522
+    MIFAREReader = MFRC522(spi1, cs)
+    
+    # detected and auth, bind...
+    
+    # read or write 16 bytes data from sector 0x11
+    MIFAREReader.MFRC522_Write(0x11, data)
+    MIFAREReader.MFRC522_Read(0x11)
   ```
 
 ## Runtime environments
@@ -144,11 +133,11 @@ Configure IO port corresponding to MCU as SPI function pin.
 
 * C
 
-  <img src="img/sp_lcd1.14_c.png" height="250" />
+  <img src="img/c_log.png" height="200" />
 
 * MaixPy
 
-  <img src="img/sp_lcd1.14_py.png" alt="sp_lcd1.14_py" height="250" />
+  <img src="img/maixpy_log.png" height="200" />
 
 ## LICENSE
 
@@ -159,13 +148,3 @@ See [LICENSE](LICENSE.md) file.
 | Version |   Editor   |
 | :-----: | :--------: |
 |  v0.1   | vamoosebbf |
-
-```shell
-find card success: 400
-uid: c5,5d,b2,d5
-pcd select success
-auth success
-write success
-start read
-read success: 1
-```
