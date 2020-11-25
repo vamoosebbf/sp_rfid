@@ -4,11 +4,12 @@
 <img src="img/sp_rfid.png" 
     alt="sp_rfid"
     title="sp_rfid"
-    style="padding-right:100px;padding-top: -50px;" align="right" width="" height="400" />
+    style="padding-right:100px;" align="right" width="" height="400" />
     
 [English](README.md)
 
 ## 介绍
+
   * 利用 SP-MOD SPI 和 RFID 模块通讯
   * 主控芯片：FM17510 是一款高度集成的工作在 13.56MHz 下的非接触读写器芯片。
     支持符合 ISO/IEC 14443 TypeA 协议的非接触读写器模式
@@ -16,8 +17,6 @@
   * 尺寸 :25*20mm
   * 64Byte 收发缓冲 FIFO
   * 连接方式 :SP-MOD (2*4P 2.54mm 间距排针)或 MX 6P 连接器 1.25mm 间距
-<!-- <img src="img/sp_lcd.png" alt="sp_lcd" height="400" /> -->
-
 
 *查看[模块规格书](doc/SP-RFID规格书V1.0.pdf)获取更多特性信息*
 
@@ -38,7 +37,7 @@
 
 ## 引脚图
 
-<img src="img/back.png" height="300" />
+<img src="img/back.jpg" height="300" />
 
 ## MCU 配置
 
