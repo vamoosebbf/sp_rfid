@@ -5,6 +5,8 @@
 #include "sleep.h"
 #include "printf.h"
 
+#include "board_config.h"
+
 /* clang-format off */
 #define GPIOHS_OUT_HIGH(io) (*(volatile uint32_t *)0x3800100CU) |= (1 << (io))
 #define GPIOHS_OUT_LOWX(io) (*(volatile uint32_t *)0x3800100CU) &= ~(1 << (io))
@@ -568,6 +570,11 @@ void Pcd_io_init(const struct rfid_io_cfg_t *cfg)
     spi_io_cfg.hs_rst = cfg->hs_rst;
 
     spi_io_cfg.clk_delay_us = cfg->clk_delay_us;
+
+    fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM);
+    fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM);
+    fpioa_set_function(RFID_MO_PIN, FUNC_GPIOHS0 + RFID_MO_HSNUM);
+    fpioa_set_function(RFID_MI_PIN, FUNC_GPIOHS0 + RFID_MI_HSNUM);
 
     gpiohs_set_drive_mode(spi_io_cfg.hs_cs, GPIO_DM_OUTPUT);
     gpiohs_set_drive_mode(spi_io_cfg.hs_clk, GPIO_DM_OUTPUT);

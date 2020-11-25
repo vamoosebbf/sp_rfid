@@ -210,11 +210,6 @@ class MFRC522:
             self.SetBitMask(self.BitFramingReg, 0x80)
 
         i = 1000 * 3
-        # while True:
-        #     n = self.Read_MFRC522(self.CommIrqReg)  # 查询事件中断
-        #     i = i - 1
-        #     if ~((i != 0) and ~(n & 0x01) and ~(n & waitIRq)):
-        #         break
 
         # 认证 与寻卡等待时间
         while True:
@@ -442,14 +437,6 @@ class MFRC522:
 
     def MFRC522_Init(self):
         self.MFRC522_Reset()
-
-        # self.Write_MFRC522(self.TModeReg, 0x8D)
-        # self.Write_MFRC522(self.TPrescalerReg, 0x3E)
-        # self.Write_MFRC522(self.TReloadRegL, 30)
-        # self.Write_MFRC522(self.TReloadRegH, 0)
-
-        # self.Write_MFRC522(self.TxAutoReg, 0x40)
-        # self.Write_MFRC522(self.ModeReg, 0x3D)
         self.M500PcdConfigISOType('A')
         time.sleep_ms(2)
         self.AntennaOn()  # 开天线
@@ -468,7 +455,7 @@ class MFRC522:
             print("unk ISO type\r\n")
 
 
-#########test#############
+###################### SP_RFID Test ######################
 continue_reading = True
 
 # 20: CS_NUM;
@@ -513,7 +500,7 @@ while continue_reading:
 
             # Authenticate
             status = MIFAREReader.MFRC522_Auth(
-                MIFAREReader.PICC_AUTHENT1A, 11, key, uid)
+                MIFAREReader.PICC_AUTHENT1A, 0x11, key, uid)
 
             # Check if authenticated
             if status == MIFAREReader.MI_OK:
@@ -524,14 +511,16 @@ while continue_reading:
 
                 # Write the data
                 print("Sector 11 will now be filled with 1~16:")
-                status = MIFAREReader.MFRC522_Write(11, data)
+                status = MIFAREReader.MFRC522_Write(0x11, data)
 
                 if status == MIFAREReader.MI_OK:
                     print("start to read")
                     # read the data
-                    MIFAREReader.MFRC522_Read(11)
+                    MIFAREReader.MFRC522_Read(0x11)
 
                 # Stop
                 MIFAREReader.MFRC522_StopCrypto1()
             else:
                 print("Authentication error")
+
+#################### SP_RFID Test end ####################

@@ -4,16 +4,7 @@
 #include "sleep.h"
 #include "printf.h"
 #include "sysctl.h"
-
-#define RFID_CS_PIN (20)
-#define RFID_CK_PIN (21)
-#define RFID_MO_PIN (8)
-#define RFID_MI_PIN (15)
-
-#define RFID_CS_HSNUM (20)
-#define RFID_CK_HSNUM (21)
-#define RFID_MO_HSNUM (8)
-#define RFID_MI_HSNUM (15)
+#include "board_config.h"
 
 int main(int argc, char const *argv[])
 {
@@ -29,11 +20,6 @@ int main(int argc, char const *argv[])
     freq = sysctl_pll_set_freq(SYSCTL_PLL0, 800000000);
     uint64_t core = current_coreid();
     printf("pll freq: %dhz\r\n", freq);
-
-    fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM);
-    fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM);
-    fpioa_set_function(RFID_MO_PIN, FUNC_GPIOHS0 + RFID_MO_HSNUM);
-    fpioa_set_function(RFID_MI_PIN, FUNC_GPIOHS0 + RFID_MI_HSNUM);
     const struct rfid_io_cfg_t io_cfg =
         {.hs_cs = RFID_CS_HSNUM,
          .hs_clk = RFID_CK_HSNUM,
