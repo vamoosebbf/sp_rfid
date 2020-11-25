@@ -4,6 +4,14 @@
     
 [English](README.md)
 
+## 目录结构
+
+|  目录  | 描述           |
+| :----: | :------------- |
+|  doc   | 参考文档       |
+|  img   | 图片           |
+| script | MaixPy脚本示例 |
+|  src   | C裸机程序示例  |
 ## 介绍
 <img src="img/sp_rfid.png" 
     alt="sp_rfid"

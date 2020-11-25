@@ -5,6 +5,14 @@
 
 [中文](README_CN.md)
 
+## Directory Structure
+| Directory | Description                                   |
+| :-------: | :-------------------------------------------- |
+|    doc    | Reference documentation                       |
+|    img    | Images                                        |
+|  script   | Maixpy script example                         |
+|    src    | C program example based on the standalone sdk |
+
 ## Introduce
 <img src="img/sp_rfid.png" 
     alt="sp_rfid"
