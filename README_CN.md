@@ -54,6 +54,7 @@
 将 MCU 原理图对应的 IO 口配置为 SPI 功能引脚。
 
 * C 示例
+  
   此示例使用的是软件模拟 SPI，所以在此需将设置对应引脚为 GPIOHS 功能而不是 SPI 功能，具体实现请查看完整代码。
   ```c
   fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
@@ -78,6 +79,7 @@
 ### SPI 初始化
 
 * C 示例
+  
   软件 SPI 只需要配置对应引脚，并没有 SPI 的初始化。
 
 * MaixPy 示例

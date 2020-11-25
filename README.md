@@ -57,6 +57,7 @@
 Configure IO port corresponding to MCU as SPI function pin.
 
 * C
+  
   This demo uses a software SPI, so set the corresponding pin to GPIOHS instead of SPI function. See the full code for the implementation.
   ```c
   fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
@@ -81,6 +82,7 @@ Configure IO port corresponding to MCU as SPI function pin.
 ### SPI initialization
 
 * C
+  
   The software SPI only needs to be configured with the corresponding pins, and there is no initialization of SPI.
 
 * MaixPy
@@ -125,10 +127,10 @@ Configure IO port corresponding to MCU as SPI function pin.
 
 ## Runtime environments
 
-| Language |  Boards  |      SDK/Firmware version      |
-| :------: | :------: | :----------------------------: |
+| Language | Boards   | SDK/Firmware version           |
+| :------: | :------- | :----------------------------- |
 |    C     | MaixCube | kendryte-standalone-sdk v0.5.6 |
-|  MaixPy  | MaixCube |         maixpy v0.5.1          |
+|  MaixPy  | MaixCube | maixpy v0.5.1                  |
 
 ## Result
 
