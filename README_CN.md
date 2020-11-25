@@ -13,7 +13,7 @@
 | script | MaixPy脚本示例 |
 |  src   | C裸机程序示例  |
 ## 介绍
-<img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="400" />
+<img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="500" />
 
 
   * 利用 SP-MOD SPI 和 RFID 模块通讯
