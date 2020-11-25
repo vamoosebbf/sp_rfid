@@ -57,7 +57,6 @@
 Configure IO port corresponding to MCU as SPI function pin.
 
 * C
-
   This demo uses a software SPI, so set the corresponding pin to GPIOHS instead of SPI function. See the full code for the implementation.
   ```c
   fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
@@ -72,7 +71,6 @@ Configure IO port corresponding to MCU as SPI function pin.
   ```
   
 * MaixPy
-
   ```python
   # 20: CS_NUM;
   fm.register(20, fm.fpioa.GPIOHS20, force=True)
@@ -83,11 +81,9 @@ Configure IO port corresponding to MCU as SPI function pin.
 ### SPI initialization
 
 * C
-
   The software SPI only needs to be configured with the corresponding pins, and there is no initialization of SPI.
 
 * MaixPy
-
   ```python
   # RFID_SCK: 21; RFID_SI:8; RFID_SO: 15;
   spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
@@ -99,13 +95,11 @@ Configure IO port corresponding to MCU as SPI function pin.
 ### Usage
 
 * Process
-
   1. Initialization
   2. Detected and bind card
   3. Read or write data
 
 * C
-
   ```c
   // detected card
   PcdRequest(0x52, type)
@@ -118,7 +112,6 @@ Configure IO port corresponding to MCU as SPI function pin.
   ```
   
 * MaixPy
-
   ```python
   # Create an object of the class MFRC522
   MIFAREReader = MFRC522(spi1, cs)
