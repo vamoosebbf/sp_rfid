@@ -47,26 +47,26 @@
 
 * C 示例
   
-    此示例使用的是软件模拟 SPI，所以在此需将设置对应引脚为 GPIOHS 功能而不是 SPI 功能，具体实现请查看完整代码。
+  此示例使用的是软件模拟 SPI，所以在此需将设置对应引脚为 GPIOHS 功能而不是 SPI 功能，具体实现请查看完整代码。
   ```c
-    fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
-    fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM); // RFID_CK_PIN: 21;
-    fpioa_set_function(RFID_MO_PIN, FUNC_GPIOHS0 + RFID_MO_HSNUM); // RFID_MO_PIN: 8;
-    fpioa_set_function(RFID_MI_PIN, FUNC_GPIOHS0 + RFID_MI_HSNUM); // RFID_MI_PIN: 15;
+  fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
+  fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM); // RFID_CK_PIN: 21;
+  fpioa_set_function(RFID_MO_PIN, FUNC_GPIOHS0 + RFID_MO_HSNUM); // RFID_MO_PIN: 8;
+  fpioa_set_function(RFID_MI_PIN, FUNC_GPIOHS0 + RFID_MI_HSNUM); // RFID_MI_PIN: 15;
 
-    gpiohs_set_drive_mode(spi_io_cfg.hs_cs, GPIO_DM_OUTPUT);
-    gpiohs_set_drive_mode(spi_io_cfg.hs_clk, GPIO_DM_OUTPUT);
-    gpiohs_set_drive_mode(spi_io_cfg.hs_mosi, GPIO_DM_OUTPUT);
-    gpiohs_set_drive_mode(spi_io_cfg.hs_miso, GPIO_DM_INPUT);
+  gpiohs_set_drive_mode(spi_io_cfg.hs_cs, GPIO_DM_OUTPUT);
+  gpiohs_set_drive_mode(spi_io_cfg.hs_clk, GPIO_DM_OUTPUT);
+  gpiohs_set_drive_mode(spi_io_cfg.hs_mosi, GPIO_DM_OUTPUT);
+  gpiohs_set_drive_mode(spi_io_cfg.hs_miso, GPIO_DM_INPUT);
   ```
 
 * MaixPy 示例
 
   ```python
-    # 20: CS_NUM;
-    fm.register(20, fm.fpioa.GPIOHS20, force=True)
-    # set gpiohs work mode to output mode
-    cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
+  # 20: CS_NUM;
+  fm.register(20, fm.fpioa.GPIOHS20, force=True)
+  # set gpiohs work mode to output mode
+  cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
   ```
 
 ### SPI 初始化
@@ -78,9 +78,9 @@
 * MaixPy 示例
 
   ```python
-    # RFID_SCK: 21; RFID_SI:8; RFID_SO: 15;
-    spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
-            polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
+  # RFID_SCK: 21; RFID_SI:8; RFID_SO: 15;
+  spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
+          polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
   ```
 
 ## SP_RFID 配置
@@ -96,27 +96,27 @@
 * C 示例
 
   ```c
-    // detected card
-    PcdRequest(0x52, type)
+  // detected card
+  PcdRequest(0x52, type)
 
-    // auth and bind...
+  // auth and bind...
 
-    // read or write 16 bytes data from sector 0x11
-    PcdWrite(0x11, w_buf)
-    PcdRead(0x11, &r_buf)
+  // read or write 16 bytes data from sector 0x11
+  PcdWrite(0x11, w_buf)
+  PcdRead(0x11, &r_buf)
   ```
   
 * MaixPy 示例
 
   ```python
-    # Create an object of the class MFRC522
-    MIFAREReader = MFRC522(spi1, cs)
-    
-    # detected and auth, bind...
-    
-    # read or write 16 bytes data from sector 0x11
-    MIFAREReader.MFRC522_Write(0x11, data)
-    MIFAREReader.MFRC522_Read(0x11)
+  # Create an object of the class MFRC522
+  MIFAREReader = MFRC522(spi1, cs)
+  
+  # detected and auth, bind...
+  
+  # read or write 16 bytes data from sector 0x11
+  MIFAREReader.MFRC522_Write(0x11, data)
+  MIFAREReader.MFRC522_Read(0x11)
   ```
 
 ## 运行环境
