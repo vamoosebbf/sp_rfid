@@ -28,7 +28,7 @@
 
 ## Pin figure
 
-<img src="img/back.jpg" height="300" />
+<img src="img/back.png" height="300" />
 
 ## Mode of connection
 

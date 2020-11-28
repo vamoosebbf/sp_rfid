@@ -28,7 +28,7 @@
 
 ## 引脚图
 
-<img src="img/back.jpg" height="300" />
+<img src="img/back.png" height="300" />
 
 ## 接线方式
 
