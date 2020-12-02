@@ -17,8 +17,8 @@
 
 <img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="500" />
 
-  该模块所采用的 FM17510 是一款高度集成的工作在 13.56MHz 下的非接触读写器芯片. 支持符合 ISO/IEC 14443 TypeA 协议的非接触读写器模式,
-  64Byte 收发缓冲 FIFO.
+该模块所采用的 FM17510 是一款高度集成的工作在 13.56MHz 下的非接触读写器芯片. 支持符合 ISO/IEC 14443 TypeA 协议的非接触读写器模式,
+64Byte 收发缓冲 FIFO.
 
 *查看[模块规格书](doc/SP-RFID规格书V1.0.pdf)获取更多特性信息*
 
