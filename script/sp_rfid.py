@@ -454,73 +454,79 @@ class MFRC522:
         else:
             print("unk ISO type\r\n")
 
+if __name__ == "__main__":
+    from micropython import const
+    ################### config ###################
+    CS_NUM = const(20)
+    SPI_FREQ_KHZ = const(600)
+    SPI_SCK = const(21)
+    SPI_MOSI = const(8)
+    SPI_MISO = const(15)
+    #############################################
 
-###################### SP_RFID Test ######################
-continue_reading = True
+    continue_reading = True
 
-# 20: CS_NUM;
-fm.register(20, fm.fpioa.GPIOHS20, force=True)
+    # 20: CS_NUM;
+    fm.register(CS_NUM, fm.fpioa.GPIOHS20, force=True)
 
-# set gpiohs work mode to output mode
-cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
+    # set gpiohs work mode to output mode
+    cs = GPIO(GPIO.GPIOHS20, GPIO.OUT)
 
-spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
-           polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
+    spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=SPI_FREQ_KHZ * 1000,
+            polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=SPI_SCK, mosi=SPI_MOSI, miso=SPI_MISO)
 
-# Create an object of the class MFRC522
-MIFAREReader = MFRC522(spi1, cs)
+    # Create an object of the class MFRC522
+    MIFAREReader = MFRC522(spi1, cs)
 
-# Welcome message
-print("Welcome to the MFRC522 data read/write example")
+    # Welcome message
+    print("Welcome to the MFRC522 data read/write example")
 
-# This loop keeps checking for chips. If one is near it will get the UID and authenticate
-while continue_reading:
+    # This loop keeps checking for chips. If one is near it will get the UID and authenticate
+    while continue_reading:
 
-    # Scan for cards
-    (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQALL)
+        # Scan for cards
+        (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQALL)
 
-    # If a card is found
-    if status == MIFAREReader.MI_OK:
-        print("Card detected")
-        # Get the UID of the card
-        (status, uid) = MIFAREReader.MFRC522_Anticoll()
-
-        # If we have the UID, continue
+        # If a card is found
         if status == MIFAREReader.MI_OK:
+            print("Card detected")
+            # Get the UID of the card
+            (status, uid) = MIFAREReader.MFRC522_Anticoll()
 
-            # Print UID
-            print("Card read UID: " +
-                  str(uid[0])+","+str(uid[1])+","+str(uid[2])+","+str(uid[3]))
-
-            # This is the default key for authentication
-            key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
-
-            # Select the scanned tag
-            MIFAREReader.MFRC522_SelectTag(uid)
-
-            # Authenticate
-            status = MIFAREReader.MFRC522_Auth(
-                MIFAREReader.PICC_AUTHENT1A, 0x11, key, uid)
-
-            # Check if authenticated
+            # If we have the UID, continue
             if status == MIFAREReader.MI_OK:
-                data = []
-                # Fill the data with 0~16
-                for x in range(0, 16):
-                    data.append(x)
 
-                # Write the data
-                print("Sector 11 will now be filled with 1~16:")
-                status = MIFAREReader.MFRC522_Write(0x11, data)
+                # Print UID
+                print("Card read UID: " +
+                    str(uid[0])+","+str(uid[1])+","+str(uid[2])+","+str(uid[3]))
 
+                # This is the default key for authentication
+                key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+
+                # Select the scanned tag
+                MIFAREReader.MFRC522_SelectTag(uid)
+
+                # Authenticate
+                status = MIFAREReader.MFRC522_Auth(
+                    MIFAREReader.PICC_AUTHENT1A, 0x11, key, uid)
+
+                # Check if authenticated
                 if status == MIFAREReader.MI_OK:
-                    print("start to read")
-                    # read the data
-                    MIFAREReader.MFRC522_Read(0x11)
+                    data = []
+                    # Fill the data with 0~16
+                    for x in range(0, 16):
+                        data.append(x)
 
-                # Stop
-                MIFAREReader.MFRC522_StopCrypto1()
-            else:
-                print("Authentication error")
+                    # Write the data
+                    print("Sector 11 will now be filled with 1~16:")
+                    status = MIFAREReader.MFRC522_Write(0x11, data)
 
-#################### SP_RFID Test end ####################
+                    if status == MIFAREReader.MI_OK:
+                        print("start to read")
+                        # read the data
+                        MIFAREReader.MFRC522_Read(0x11)
+
+                    # Stop
+                    MIFAREReader.MFRC522_StopCrypto1()
+                else:
+                    print("Authentication error")

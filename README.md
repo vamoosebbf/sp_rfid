@@ -14,15 +14,12 @@
 |    src    | C program example based on the standalone sdk |
 
 ## Introduce
+
 <img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="500" />
 
-  * Use SP-MOD SPI to communicate with RFID Module
-  * Control chip：The FM17510 is a highly integrated, contactless reader chip that works at 13.56MHz.
-    Supports non-contact reader mode in accordance with ISO/IEC 14443 protocol
-  * ISO14443 TYPEA supports communication rates of 106kbps，212kbps，424kbps
-  * Size :25*20mm
-  * 64Byte FIFO
-  * The connection method :SP-MOD (2*4P 2.54mm space stitch)or MX 6P connector 1.25mm spaced
+The FM17510 used in this module is a highly integrated non-contact reader chip working at 13.56MHz. Supports non-contact reader mode in accordance with ISO/IEC 14443 protocol,
+
+64Byte TRANSCeiver buffer FIFO.
 
 *See [Module Specification](doc/SP-RFID规格书V1.0.pdf) for more information.*
 
@@ -56,6 +53,7 @@ Configure IO port corresponding to MCU as SPI function pin.
 * C
   
   This demo uses a software SPI, so set the corresponding pin to GPIOHS instead of SPI function. See the full code for the implementation.
+
   ```c
   fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
   fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM); // RFID_CK_PIN: 21;
@@ -69,6 +67,7 @@ Configure IO port corresponding to MCU as SPI function pin.
   ```
   
 * MaixPy
+  
   ```python
   # 20: CS_NUM;
   fm.register(20, fm.fpioa.GPIOHS20, force=True)
@@ -83,15 +82,14 @@ Configure IO port corresponding to MCU as SPI function pin.
   The software SPI only needs to be configured with the corresponding pins, and there is no initialization of SPI.
 
 * MaixPy
+  
   ```python
   # RFID_SCK: 21; RFID_SI:8; RFID_SO: 15;
   spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
             polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
   ```
 
-## SP_RFID configuration
-
-### Usage
+## Usage
 
 * Process
   1. Initialization
@@ -99,6 +97,7 @@ Configure IO port corresponding to MCU as SPI function pin.
   3. Read or write data
 
 * C
+  
   ```c
   // detected card
   PcdRequest(0x52, type)
@@ -111,6 +110,7 @@ Configure IO port corresponding to MCU as SPI function pin.
   ```
   
 * MaixPy
+  
   ```python
   # Create an object of the class MFRC522
   MIFAREReader = MFRC522(spi1, cs)
@@ -139,12 +139,43 @@ Configure IO port corresponding to MCU as SPI function pin.
 
   <img src="img/maixpy_log.png" height="200" />
 
+## Transplant
+
+The following parameters need to be modified.
+
+* C
+  
+  ```c
+    // board_config.h
+    #define RFID_CS_PIN (20)
+    #define RFID_CK_PIN (21)
+    #define RFID_MO_PIN (8)
+    #define RFID_MI_PIN (15)
+
+    #define RFID_CS_HSNUM (20)
+    #define RFID_CK_HSNUM (21)
+    #define RFID_MO_HSNUM (8)
+    #define RFID_MI_HSNUM (15)
+  ```
+
+* MaixPy
+  
+  ```python
+    ################### config ###################
+    CS_NUM = const(20)
+    SPI_FREQ_KHZ = const(600)
+    SPI_SCK = const(21)
+    SPI_MOSI = const(8)
+    SPI_MISO = const(15)
+    #############################################
+  ```
+
 ## LICENSE
 
 See [LICENSE](LICENSE.md) file.
 
 ## Other information
 
-| Version |   Editor   |
-| :-----: | :--------: |
-|  v0.1   | vamoosebbf |
+| Version |   Editor   |   Date    |
+| :-----: | :--------: | :-------: |
+|  v1.0   | vamoosebbf | 2020.12.2 |

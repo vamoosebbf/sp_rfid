@@ -12,17 +12,13 @@
 |  img   | 图片           |
 | script | MaixPy脚本示例 |
 |  src   | C裸机程序示例  |
+
 ## 介绍
+
 <img src="img/sp_rfid.png" style="padding-right:100px;" align="right" width="" height="500" />
 
-
-  * 利用 SP-MOD SPI 和 RFID 模块通讯
-  * 主控芯片：FM17510 是一款高度集成的工作在 13.56MHz 下的非接触读写器芯片。
-    支持符合 ISO/IEC 14443 TypeA 协议的非接触读写器模式
-  * ISO14443 TYPEA 支持通讯速率 106kbps，212kbps，424kbps
-  * 尺寸 :25*20mm
-  * 64Byte 收发缓冲 FIFO
-  * 连接方式 :SP-MOD (2*4P 2.54mm 间距排针)或 MX 6P 连接器 1.25mm 间距
+  该模块所采用的 FM17510 是一款高度集成的工作在 13.56MHz 下的非接触读写器芯片. 支持符合 ISO/IEC 14443 TypeA 协议的非接触读写器模式,
+  64Byte 收发缓冲 FIFO.
 
 *查看[模块规格书](doc/SP-RFID规格书V1.0.pdf)获取更多特性信息*
 
@@ -49,11 +45,12 @@
 
 ### IO 口配置
 
-将 MCU 原理图对应的 IO 口配置为 SPI 功能引脚。
+将 MCU 原理图对应的 IO 口配置为 SPI 功能引脚.
 
-* C 示例
+* C
   
-  此示例使用的是软件模拟 SPI，所以在此需将设置对应引脚为 GPIOHS 功能而不是 SPI 功能，具体实现请查看完整代码。
+  此示例使用的是软件模拟 SPI, 所以在此需将设置对应引脚为 GPIOHS 功能而不是 SPI 功能, 具体实现请查看完整代码.
+
   ```c
   fpioa_set_function(RFID_CS_PIN, FUNC_GPIOHS0 + RFID_CS_HSNUM); // RFID_CS_PIN: 20;
   fpioa_set_function(RFID_CK_PIN, FUNC_GPIOHS0 + RFID_CK_HSNUM); // RFID_CK_PIN: 21;
@@ -66,7 +63,8 @@
   gpiohs_set_drive_mode(spi_io_cfg.hs_miso, GPIO_DM_INPUT);
   ```
 
-* MaixPy 示例
+* MaixPy
+  
   ```python
   # 20: CS_NUM;
   fm.register(20, fm.fpioa.GPIOHS20, force=True)
@@ -76,27 +74,26 @@
 
 ### SPI 初始化
 
-* C 示例
+* C
   
-  软件 SPI 只需要配置对应引脚，并没有 SPI 的初始化。
+  软件 SPI 只需要配置对应引脚, 并没有 SPI 的初始化.
 
-* MaixPy 示例
+* MaixPy
+  
   ```python
   # RFID_SCK: 21; RFID_SI:8; RFID_SO: 15;
   spi1 = SPI(SPI.SPI1, mode=SPI.MODE_MASTER, baudrate=600 * 1000,
           polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=21, mosi=8, miso=15)
   ```
 
-## SP_RFID 配置
-
-### 使用方式
+## 使用方法
 
 * 流程
   1. 初始化
   2. 扫描并绑定卡片
   3. 读写数据
 
-* C 示例
+* C
   ```c
   // detected card
   PcdRequest(0x52, type)
@@ -108,7 +105,7 @@
   PcdRead(0x11, &r_buf)
   ```
   
-* MaixPy 示例
+* MaixPy
   ```python
   # Create an object of the class MFRC522
   MIFAREReader = MFRC522(spi1, cs)
@@ -137,12 +134,43 @@
 
   <img src="img/maixpy_log.png" height="200" />
 
+## 移植
+
+修改以下参数即可.
+
+* C
+  
+  ```c
+    // board_config.h
+    #define RFID_CS_PIN (20)
+    #define RFID_CK_PIN (21)
+    #define RFID_MO_PIN (8)
+    #define RFID_MI_PIN (15)
+
+    #define RFID_CS_HSNUM (20)
+    #define RFID_CK_HSNUM (21)
+    #define RFID_MO_HSNUM (8)
+    #define RFID_MI_HSNUM (15)
+  ```
+
+* MaixPy
+  
+  ```python
+    ################### config ###################
+    CS_NUM = const(20)
+    SPI_FREQ_KHZ = const(600)
+    SPI_SCK = const(21)
+    SPI_MOSI = const(8)
+    SPI_MISO = const(15)
+    #############################################
+  ```
+
 ## 许可
 
 请查看 [LICENSE](LICENSE.md) 文件.
 
 ## 相关信息
 
-| 版本号 |   编辑人   |
-| :----: | :--------: |
-|  v0.1  | vamoosebbf |
+| 版本号 |   编辑人   |   时间    |
+| :----: | :--------: | :-------: |
+|  v1.0  | vamoosebbf | 2020.12.2 |
