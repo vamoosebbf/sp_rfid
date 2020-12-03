@@ -248,7 +248,7 @@ static uint8_t PcdComMF522(uint8_t ucCommand, uint8_t *pInData, uint8_t ucInLenB
 
                 //最后接收到得字节的有效位数
                 ucLastBits = ReadRawRC(ControlReg) & 0x07;
-                printf("ucN: %d, ucLastBits: %d\r\n", ucN, ucLastBits);
+                // printf("ucN: %d, ucLastBits: %d\r\n", ucN, ucLastBits);
                 if (ucLastBits)
                 {
                     //N个字节数减去1（最后一个字节）+最后一位的位数 读取到的数据总位数
@@ -510,11 +510,7 @@ uint8_t PcdWrite(uint8_t ucAddr, uint8_t *pData)
 
     if ((cStatus != MI_OK) || (ulLen != 4) ||
         ((ucComMF522Buf[0] & 0x0F) != 0x0A))
-    {
-        printf("2 ulLen: %d\r\n", ulLen);
-
         cStatus = MI_ERR;
-    }
 
     if (cStatus == MI_OK)
     {
@@ -529,10 +525,7 @@ uint8_t PcdWrite(uint8_t ucAddr, uint8_t *pData)
 
         if ((cStatus != MI_OK) || (ulLen != 4) ||
             ((ucComMF522Buf[0] & 0x0F) != 0x0A))
-        {
-            printf("1 ulLen: %d\r\n", ulLen);
             cStatus = MI_ERR;
-        }
     }
     return cStatus;
 }

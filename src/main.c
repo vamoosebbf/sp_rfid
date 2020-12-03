@@ -42,7 +42,7 @@ int main(int argc, char const *argv[])
     {
         // find card
         if (PcdRequest(0x52, type) == MI_OK)
-            printf("find card success: %x\r\n", type[0] << 8 | type[1]);
+            printf("find card success Tagtype: 0x%x\r\n", type[0] << 8 | type[1]);
         msleep(100);
 
         // get uid

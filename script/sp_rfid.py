@@ -231,7 +231,7 @@ class MFRC522:
                 if command == self.PCD_TRANSCEIVE:
                     n = self.Read_MFRC522(self.FIFOLevelReg)
                     lastBits = self.Read_MFRC522(self.ControlReg) & 0x07
-                    print("n: {}, {}".format(n, lastBits))
+                    # print("n: {}, {}".format(n, lastBits))
                     if lastBits != 0:
                         backLen = (n-1)*8 + lastBits
                     else:
@@ -270,11 +270,11 @@ class MFRC522:
         TagType.append(reqMode)
         (status, backData, backBits) = self.MFRC522_ToCard(
             self.PCD_TRANSCEIVE, TagType)
-        print("backBits: {}".format(backBits))
+        # print("backBits: {}".format(backBits))
         if ((status != self.MI_OK) | (backBits != 0x10)):
             status = self.MI_ERR
 
-        return (status, backBits)
+        return (status, backData)
 
     def MFRC522_Anticoll(self):
         backData = []
@@ -483,13 +483,13 @@ if __name__ == "__main__":
 
     # This loop keeps checking for chips. If one is near it will get the UID and authenticate
     while continue_reading:
-
+        time.sleep_ms(300)
         # Scan for cards
-        (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQALL)
+        (status, ataq) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQALL)
 
         # If a card is found
         if status == MIFAREReader.MI_OK:
-            print("Card detected")
+            print("Card detected type: ",hex(ataq[0]<<8|ataq[1]))
             # Get the UID of the card
             (status, uid) = MIFAREReader.MFRC522_Anticoll()
 
@@ -500,7 +500,7 @@ if __name__ == "__main__":
                 print("Card read UID: " +
                     str(uid[0])+","+str(uid[1])+","+str(uid[2])+","+str(uid[3]))
 
-                # This is the default key for authentication
+                # This is the default key of M1(S50) for authentication
                 key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
 
                 # Select the scanned tag
@@ -508,7 +508,7 @@ if __name__ == "__main__":
 
                 # Authenticate
                 status = MIFAREReader.MFRC522_Auth(
-                    MIFAREReader.PICC_AUTHENT1A, 0x11, key, uid)
+                    MIFAREReader.PICC_AUTHENT1A, 0x12, key, uid)
 
                 # Check if authenticated
                 if status == MIFAREReader.MI_OK:
@@ -519,12 +519,12 @@ if __name__ == "__main__":
 
                     # Write the data
                     print("Sector 11 will now be filled with 1~16:")
-                    status = MIFAREReader.MFRC522_Write(0x11, data)
+                    status = MIFAREReader.MFRC522_Write(0x12, data)
 
                     if status == MIFAREReader.MI_OK:
                         print("start to read")
                         # read the data
-                        MIFAREReader.MFRC522_Read(0x11)
+                        MIFAREReader.MFRC522_Read(0x12)
 
                     # Stop
                     MIFAREReader.MFRC522_StopCrypto1()
